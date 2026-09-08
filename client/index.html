@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure-T</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#020204;--red:#ef4444;--orange:#f97316;--green:#22c55e;--text:#e2e8f0;--muted:#64748b;--glass:rgba(255,255,255,.02)}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;cursor:none}
+::selection{background:var(--red);color:#fff}
+
+.cursor{position:fixed;width:20px;height:20px;border:1px solid var(--red);border-radius:50%;pointer-events:none;z-index:9999;mix-blend-mode:difference;transition:transform .15s}
+.cursor.active{transform:scale(3)}
+.grain{position:fixed;inset:0;z-index:9998;pointer-events:none;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* SCANLINES */
+.scanlines{position:fixed;inset:0;z-index:9997;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px)}
+
+.loader{position:fixed;inset:0;background:var(--bg);z-index:10000;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:'JetBrains Mono',monospace}
+.loader-text{font-size:clamp(2rem,6vw,5rem);font-weight:700;color:var(--red);letter-spacing:-2px}
+.loader-status{font-size:.7rem;color:var(--green);margin-top:16px;letter-spacing:2px}
+.loader-bar{width:200px;height:1px;background:rgba(255,255,255,.1);margin-top:12px;overflow:hidden}
+.loader-fill{height:100%;background:var(--red);width:0}
+
+nav{position:fixed;top:0;width:100%;z-index:100;padding:24px 48px;display:flex;justify-content:space-between;align-items:center;mix-blend-mode:difference}
+.nav-logo{font-size:1.2rem;font-weight:700;letter-spacing:-1px;font-family:'JetBrains Mono',monospace}
+.nav-menu{display:flex;gap:40px}
+.nav-menu a{color:var(--text);font-size:.7rem;text-transform:uppercase;letter-spacing:4px;text-decoration:none;font-family:'JetBrains Mono',monospace}
+.nav-menu a:hover{color:var(--red)}
+
+.hero{height:100vh;display:flex;align-items:center;justify-content:center;position:relative}
+.hero-bg{position:absolute;inset:0;overflow:hidden}
+.grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(239,68,68,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(239,68,68,.03) 1px,transparent 1px);background-size:60px 60px}
+.threat-pulse{position:absolute;width:300px;height:300px;border-radius:50%;border:1px solid rgba(239,68,68,.1);top:50%;left:50%;transform:translate(-50%,-50%);animation:pulse 3s infinite}
+.threat-pulse:nth-child(2){width:500px;height:500px;animation-delay:.5s}
+.threat-pulse:nth-child(3){width:700px;height:700px;animation-delay:1s}
+@keyframes pulse{0%{opacity:.3;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.5)}}
+
+.hero-content{position:relative;z-index:2;text-align:center;padding:0 24px}
+.hero-tag{font-size:.65rem;text-transform:uppercase;letter-spacing:8px;color:var(--red);margin-bottom:32px;font-family:'JetBrains Mono',monospace}
+.hero-title{font-size:clamp(3rem,9vw,9rem);font-weight:700;line-height:.85;letter-spacing:-6px;margin-bottom:32px}
+.hero-title .line{display:block;overflow:hidden}
+.hero-title .word{display:inline-block;transform:translateY(120%)}
+.hero-sub{font-size:1.1rem;color:var(--muted);max-width:500px;margin:0 auto 48px;font-weight:300;line-height:1.7}
+.hero-cta{display:inline-flex;align-items:center;gap:12px;padding:16px 40px;border:1px solid rgba(239,68,68,.3);color:var(--text);text-decoration:none;font-size:.75rem;text-transform:uppercase;letter-spacing:4px;position:relative;overflow:hidden;transition:.6s;font-family:'JetBrains Mono',monospace}
+.hero-cta::before{content:'';position:absolute;inset:0;background:var(--red);transform:translateX(-101%);transition:.6s cubic-bezier(.23,1,.32,1)}
+.hero-cta:hover::before{transform:translateX(0)}
+.hero-cta span{position:relative;z-index:1}
+
+/* TERMINAL MARQUEE */
+.terminal-bar{padding:20px 0;border-top:1px solid rgba(239,68,68,.1);border-bottom:1px solid rgba(239,68,68,.1);overflow:hidden;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--green)}
+.terminal-scroll{display:flex;gap:60px;animation:termScroll 40s linear infinite;white-space:nowrap}
+.terminal-scroll span{flex-shrink:0}
+@keyframes termScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+.section{padding:160px 48px}
+.section-num{font-size:.65rem;color:var(--red);text-transform:uppercase;letter-spacing:4px;margin-bottom:16px;font-family:'JetBrains Mono',monospace}
+.section-heading{font-size:clamp(2.5rem,5vw,5rem);font-weight:700;letter-spacing:-3px;line-height:1;margin-bottom:24px;max-width:700px}
+.section-body{font-size:1.1rem;color:var(--muted);max-width:500px;line-height:1.8;font-weight:300}
+
+.threat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:80px;background:rgba(239,68,68,.05)}
+.threat-cell{background:var(--bg);padding:48px;border:1px solid rgba(239,68,68,.05);position:relative;overflow:hidden;transition:.4s}
+.threat-cell:hover{border-color:rgba(239,68,68,.2);background:rgba(239,68,68,.02)}
+.threat-cell::before{content:attr(data-num);position:absolute;top:16px;right:16px;font-size:.6rem;color:var(--red);font-family:'JetBrains Mono',monospace;letter-spacing:2px}
+.threat-cell h3{font-size:1.3rem;font-weight:600;letter-spacing:-1px;margin-bottom:12px}
+.threat-cell p{color:var(--muted);font-size:.85rem;line-height:1.7}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;padding:0 48px;margin:160px 0}
+.stat-block{padding:60px 40px;text-align:center;border:1px solid rgba(239,68,68,.05)}
+.stat-val{font-size:clamp(2rem,4vw,3.5rem);font-weight:700;letter-spacing:-2px;color:var(--red);font-family:'JetBrains Mono',monospace}
+.stat-lbl{color:var(--muted);font-size:.65rem;text-transform:uppercase;letter-spacing:3px;margin-top:12px;font-family:'JetBrains Mono',monospace}
+
+.final-cta{min-height:80vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:48px}
+.final-cta h2{font-size:clamp(3rem,8vw,8rem);font-weight:700;letter-spacing:-5px;line-height:.85;margin-bottom:48px}
+.final-cta h2 em{font-style:italic;color:var(--red)}
+
+footer{padding:48px;border-top:1px solid rgba(239,68,68,.05);display:flex;justify-content:space-between;font-size:.65rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.magnetic{display:inline-block;transition:transform .3s cubic-bezier(.23,1,.32,1)}
+@media(max-width:768px){nav{padding:16px 24px}.nav-menu{display:none}.section{padding:80px 24px}.threat-grid{grid-template-columns:1fr}.stats-row{grid-template-columns:repeat(2,1fr);padding:0 24px}footer{flex-direction:column;gap:12px}}
+</style>
+</head>
+<body>
+
+<div class="loader">
+  <div class="loader-text">SECURE-T</div>
+  <div class="loader-status">INITIALIZING DEFENSE MATRIX...</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<div class="cursor"></div>
+<div class="grain"></div>
+<div class="scanlines"></div>
+
+<nav>
+  <div class="nav-logo magnetic">SEC:T</div>
+  <div class="nav-menu">
+    <a href="#platform" class="magnetic">Platform</a>
+    <a href="#threat" class="magnetic">Threat Intel</a>
+    <a href="#deploy" class="magnetic">Deploy</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg">
+    <div class="grid-bg"></div>
+    <div class="threat-pulse"></div>
+    <div class="threat-pulse"></div>
+    <div class="threat-pulse"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-tag">Enterprise Cybersecurity</div>
+    <h1 class="hero-title">
+      <span class="line"><span class="word">Security</span></span>
+      <span class="line"><span class="word">that thinks</span></span>
+      <span class="line"><span class="word">faster</span></span>
+    </h1>
+    <p class="hero-sub">AI-driven threat detection. Zero-trust architecture. Compliance automation. One platform. Zero compromises.</p>
+    <a href="#" class="hero-cta magnetic"><span>Request access →</span></a>
+  </div>
+</section>
+
+<div class="terminal-bar">
+  <div class="terminal-scroll">
+    <span>[SHIELD] 2.3B events/day processed</span>
+    <span>[DETECT] Zero-day threat neutralized 0.08s</span>
+    <span>[AUDIT] SOC2 Type II — compliant</span>
+    <span>[SCAN] Dark web monitoring — 24/7</span>
+    <span>[PATCH] CVE-2026-4421 — auto-patched</span>
+    <span>[AUTH] Zero-trust verified — 500+ orgs</span>
+    <span>[SHIELD] 2.3B events/day processed</span>
+    <span>[DETECT] Zero-day threat neutralized 0.08s</span>
+    <span>[AUDIT] SOC2 Type II — compliant</span>
+    <span>[SCAN] Dark web monitoring — 24/7</span>
+    <span>[PATCH] CVE-2026-4421 — auto-patched</span>
+    <span>[AUTH] Zero-trust verified — 500+ orgs</span>
+  </div>
+</div>
+
+<section class="section" id="platform">
+  <div class="section-num">01 — Platform</div>
+  <h2 class="section-heading">Complete cyber defense in one stack</h2>
+  <p class="section-body">From endpoint to cloud. From detection to response. Neural networks analyze every packet, every login, every anomaly. Attackers don't stand a chance.</p>
+
+  <div class="threat-grid" id="threat">
+    <div class="threat-cell" data-num="01"><h3>AI Threat Detection</h3><p>Neural network models trained on 10B+ attack patterns. Catches zero-days before signatures exist.</p></div>
+    <div class="threat-cell" data-num="02"><h3>Zero-Trust Network</h3><p>Micro-segmentation, continuous auth, least-privilege. Never trust. Always verify. Every request.</p></div>
+    <div class="threat-cell" data-num="03"><h3>Compliance Engine</h3><p>SOC2, ISO 27001, GDPR, HIPAA auto-generated. Real-time scoring. Auditor-ready reports.</p></div>
+    <div class="threat-cell" data-num="04"><h3>Incident Response</h3><p>Automated playbooks, forensic analysis, one-click containment. MTTR down 87%.</p></div>
+    <div class="threat-cell" data-num="05"><h3>Cloud CSPM</h3><p>Multi-cloud security for AWS, Azure, GCP. Misconfig detection, secret scanning, IaC audit.</p></div>
+    <div class="threat-cell" data-num="06"><h3>Dark Web Intel</h3><p>24/7 surveillance of underground forums, breach databases, paste sites. Your data, monitored.</p></div>
+  </div>
+</section>
+
+<div class="stats-row">
+  <div class="stat-block"><div class="stat-val">99.97%</div><div class="stat-lbl">Detection rate</div></div>
+  <div class="stat-block"><div class="stat-val">&lt;0.1s</div><div class="stat-lbl">Response time</div></div>
+  <div class="stat-block"><div class="stat-val">2.3B</div><div class="stat-lbl">Events/day</div></div>
+  <div class="stat-block"><div class="stat-val">500+</div><div class="stat-lbl">Enterprise clients</div></div>
+</div>
+
+<section class="final-cta" id="deploy">
+  <div>
+    <h2>Don't wait<br>for the<br><em>breach</em></h2>
+    <a href="#" class="hero-cta magnetic"><span>Deploy Secure-T →</span></a>
+  </div>
+</section>
+
+<footer>
+  <span>© 2026 Secure-T — Belentani</span>
+  <span>SOC2 Type II · ISO 27001 · GDPR</span>
+</footer>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+const tl = gsap.timeline();
+tl.to('.loader-fill', { width: '100%', duration: 1.2, ease: 'power2.inOut' })
+  .to('.loader-status', { opacity: 0, duration: .2 }, '-=.3')
+  .to('.loader', { yPercent: -100, duration: .7, ease: 'power4.inOut', delay: .1 })
+  .to('.hero-title .word', { y: 0, duration: 1, stagger: .12, ease: 'power4.out' }, '-=.5')
+  .from('.hero-tag', { opacity: 0, y: -20, duration: .5 }, '-=.8')
+  .from('.hero-sub', { opacity: 0, y: 30, duration: .6 }, '-=.3')
+  .from('.hero-cta', { opacity: 0, y: 20, duration: .5 }, '-=.1');
+
+const cursor = document.querySelector('.cursor');
+document.addEventListener('mousemove', e => gsap.to(cursor, { x: e.clientX - 10, y: e.clientY - 10, duration: .3 }));
+document.querySelectorAll('a, .magnetic').forEach(el => {
+  el.addEventListener('mouseenter', () => cursor.classList.add('active'));
+  el.addEventListener('mouseleave', () => cursor.classList.remove('active'));
+});
+document.querySelectorAll('.magnetic').forEach(el => {
+  el.addEventListener('mousemove', e => {
+    const r = el.getBoundingClientRect();
+    gsap.to(el, { x: (e.clientX - r.left - r.width/2)*.3, y: (e.clientY - r.top - r.height/2)*.3, duration: .3 });
+  });
+  el.addEventListener('mouseleave', () => gsap.to(el, { x: 0, y: 0, duration: .5, ease: 'elastic.out(1,.3)' }));
+});
+
+gsap.utils.toArray('.section-heading, .section-body, .section-num').forEach(el => {
+  gsap.from(el, { scrollTrigger: { trigger: el, start: 'top 80%' }, y: 60, opacity: 0, duration: 1, ease: 'power3.out' });
+});
+gsap.utils.toArray('.threat-cell').forEach((el, i) => {
+  gsap.from(el, { scrollTrigger: { trigger: el, start: 'top 85%' }, y: 40, opacity: 0, duration: .8, delay: i * .1, ease: 'power3.out' });
+});
+</script>
+</body>
+</html>
