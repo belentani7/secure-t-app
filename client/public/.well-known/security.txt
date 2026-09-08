@@ -1,0 +1,12 @@
+# security.txt for secure-t-university
+# Security contact information per RFC 9116
+
+Contact: mailto:security@secure-t-app.vercel.app
+Contact: https://secure-t-app.vercel.app/security/report
+Preferred-Languages: en
+Canonical: https://secure-t-app.vercel.app/.well-known/security.txt
+Policy: https://secure-t-app.vercel.app/security/policy
+Hiring: https://secure-t-app.vercel.app/careers/security
+Encryption: https://secure-t-app.vercel.app/.well-known/pgp-key.txt
+Acknowledgments: https://secure-t-app.vercel.app/security/hall-of-fame
+Expires: 2027-09-06T00:00:00.000Z

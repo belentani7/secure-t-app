@@ -1,0 +1,16 @@
+# robots.txt for secure-t-university
+User-agent: *
+Allow: /
+
+Sitemap: https://secure-t-university.example.com/sitemap.xml
+
+Crawl-delay: 10
+
+Disallow: /admin/
+Disallow: /api/
+Disallow: /private/
+Disallow: /courses/
+Disallow: /modules/
+Disallow: /assets/
+Disallow: /*.json$
+Disallow: /*.xml$
